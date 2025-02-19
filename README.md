@@ -1,1 +1,1 @@
-Programs written with python for AMS 326 Numerical Analysis.
+Programs written in python for AMS 326 Numerical Analysis.
