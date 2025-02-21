@@ -14,19 +14,33 @@ def lagrange_interpolation(t_values, y_values, t):
 
 
 # Part 2: Quadratic Fit Q2(t) = a0 + a1 * t + a2 * t^2 using least squares
-def quadratic_fit(t_values, y_values):
-    # Construct the normal equations A * [a0, a1, a2] = b
-    A = np.array([[np.sum(t_values**0), np.sum(t_values**1), np.sum(t_values**2)],
-                  [np.sum(t_values**1), np.sum(t_values**2), np.sum(t_values**3)],
-                  [np.sum(t_values**2), np.sum(t_values**3), np.sum(t_values**4)]])
+def least_squares(t_values, y_values):
+    n = len(t_values)
+    A = [[n, sum(t_values), sum(t**2 for t in t_values)],
+         [sum(t_values), sum(t**2 for t in t_values), sum(t**3 for t in t_values)],
+         [sum(t**2 for t in t_values), sum(t**3 for t in t_values), sum(t**4 for t in t_values)]]
     
-    b = np.array([np.sum(y_values),
-                  np.sum(t_values * y_values),
-                  np.sum(t_values**2 * y_values)])
+    B = [sum(y_values), sum(t_values[i] * y_values[i] for i in range(n)), sum(t_values[i]**2 * y_values[i] for i in range(n))]
     
-    # Solve for the coefficients [a0, a1, a2]
-    coeffs = np.linalg.solve(A, b)
-    return coeffs
+    # Solving Ax = B using Gaussian elimination
+    n = len(B)
+    for i in range(n):
+        for j in range(i+1, n):
+            factor = A[j][i] / A[i][i]
+            for k in range(i, n):
+                A[j][k] -= factor * A[i][k]
+            B[j] -= factor * B[i]
+    
+    # Back substitution
+    coeffs = np.zeros(n)
+    for i in range(n-1, -1, -1):
+        coeffs[i] = (B[i] - sum(A[i][j] * coeffs[j] for j in range(i+1, n))) / A[i][i]
+    
+    return coeffs  # a0, a1, a2
+
+def quadratic_fit(coeffs, t):
+    a0, a1, a2 = coeffs
+    return a0 + a1 * t + a2 * t**2
 
 
 def main():
@@ -38,10 +52,10 @@ def main():
     P4_at_6 = lagrange_interpolation(t_values, y_values, 6)
 
     # Get the quadratic coefficients
-    a0, a1, a2 = quadratic_fit(t_values, y_values)
+    coeffs = least_squares(t_values, y_values)
 
     # Compute Q2(t) at t = 6
-    Q2_at_6 = a0 + a1 * 6 + a2 * 6**2
+    Q2_at_6 = quadratic_fit(coeffs, 6)
 
     # Output the results
     print(f"Polynomial interpolation P4(t) at t=6: {P4_at_6}")
